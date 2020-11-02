@@ -1,96 +1,59 @@
+const express = require("express");
+const mysql = require("mysql");
+const dotenv=require('dotenv');
+const path=require('path');
 
-let k = localStorage.getItem("authorar");
-let authorarr = JSON.parse(k);
+const app = express();
 
-let kk = localStorage.getItem("currqtyar");
-let currqtyarr = JSON.parse(kk);
-
-
-let addBtn = document.getElementById("addBtn");
-addBtn.addEventListener("click", function (e) {
-    let html = "";
-
-    let Txt = document.getElementById("addTxt");
+dotenv.config|({ path: './.env'});
 
 
-    let bookarr = localStorage.getItem("bookar");
-    let notesObj = JSON.parse(bookarr);
+//created a connection
+const db=mysql.createConnection({
 
-
-    notesObj.forEach(function (element, index) {
-        if (element == Txt.value) {
-            html += `<br></br>
-                <div class="noteCard my-2 mx-2 card" style="width: 18rem;">
-                        <div class="card-body">
-                            <h4 class="card-title">Book: ${element}</h4>
-                            <div class="card=detail">
-                            <h6>Author: ${authorarr[index]}</h6>
-                            <h6>Qty. Availble: ${currqtyarr[index]}</h6>
-                            <label for="qty">Enter Qty:</label>
-                            <input type="number" id="inputqty">
-                            <br></br>
-
-                            <button id="${index}"onclick="issue(this.id)" class="btn btn-primary mx-2 my-1">Issue this Book</button>
-                            <button id="${index}"onclick="returnn(this.id)" class="btn btn-primary mx-2 my-2">Return this Book</button>
-                        </div>
-                    </div>
-                </div>`;
-        }
-    });
-
-    let notesElm = document.getElementById("notes");
-    if (notesObj.length != 0) {
-        notesElm.innerHTML = html;
-    } else {
-        notesElm.innerHTML = `Nothing to show! Use "Add a Note" section above to add notes.`;
-    }
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    port: 5001,
+    password: process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE
 
 });
 
+//homepage
+const publicDirectory=path.join(__dirname, './public');
 
-//Function to issue
-function issue(index) {
+app.set('view engine' , 'hbs');
 
-    let inputqty = document.getElementById('inputqty');
-    let currqtyarr = localStorage.getItem("currqtyar");
-    let currqtyar = JSON.parse(currqtyarr);
-
-    inputqty = inputqty.value;
-    inputqty = parseInt(inputqty);
-    currqtyar[index] = parseInt(currqtyar[index])
+//use that css public dirtectory
+app.use(express.static(publicDirectory));
 
 
-    if (currqtyar[index] >= inputqty) {
-        let x = currqtyar[index] - inputqty;
-        x = x.toString();
-        currqtyar[index] = x;
+
+//actual connection
+db.connect((error)=>{
+
+    if(error){
+        console.log(error);
 
     }
+    else{
+        console.log("mysql connected");
 
-    else {
-        console.log('sorry qty not availble');
     }
+});
 
 
-    localStorage.setItem("currqtyar", JSON.stringify(currqtyar));
+//now create tables in your sql
+//define routes
+app.use('/', require('./routes/pages'));
+app.use('/auth', require('./routes/auth'));
 
-}
+//taking form info, parsing url encoded bodies as sent by html file. It makes sure I grab data from form
+app.use(express.urlencoded({extended: false}));
 
+app.use(express.json());
 
-//Function to return
-function returnn(index) {
+app.listen(5001, ()=>{
 
-    let inputqty = document.getElementById('inputqty');
-    let currqtyarr = localStorage.getItem("currqtyar");
-    let currqtyar = JSON.parse(currqtyarr);
-
-    inputqty = inputqty.value;
-    inputqty = parseInt(inputqty);
-    currqtyar[index] = parseInt(currqtyar[index])
-
-    let x = currqtyar[index] + inputqty;
-    x = x.toString();
-    currqtyar[index] = x;
-
-    localStorage.setItem("currqtyar", JSON.stringify(currqtyar));
-}
+    console.log("started");
+});
